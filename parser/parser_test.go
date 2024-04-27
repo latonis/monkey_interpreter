@@ -6,17 +6,18 @@ import (
 	"testing"
 )
 
-func TestLetStatement(t *testing.T) {
+func TestLetStatements(t *testing.T) {
 	input := `
-	let x = 5;
-	let y = 10;
-	let foobar = 838383;
+let x = 5;
+let y = 10;
+let foobar = 838383;
 	`
 
 	l := lexer.New(input)
 	p := New(l)
 
 	program := p.ParseProgram()
+	checkParserErrors(t, p)
 
 	if program == nil {
 		t.Fatalf("ParseProgram() errored with nil")
@@ -64,4 +65,50 @@ func testLetStatementIdentifier(t *testing.T, s ast.Statement, name string) bool
 	}
 
 	return true
+}
+
+func checkParserErrors(t *testing.T, p *Parser) {
+	errors := p.Errors()
+
+	if len(errors) == 0 {
+		return
+	}
+
+	t.Errorf("Parser encountered %d errors", len(errors))
+
+	for _, msg := range errors {
+		t.Errorf("Parser error encountered: %q", msg)
+	}
+	t.FailNow()
+}
+
+func TestReturnStatements(t *testing.T) {
+	input := `
+	return 5;
+	return 10;
+	return 993322;
+	`
+	l := lexer.New(input)
+	p := New(l)
+
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if program == nil {
+		t.Fatalf("ParseProgram() errored with nil")
+	}
+	if len(program.Statements) != 3 {
+		t.Fatalf("program.Statements did not return 3 statements. Parsed %d statements instead.", len(program.Statements))
+	}
+
+	for _, stmt := range program.Statements {
+		returnStmt, ok := stmt.(*ast.ReturnStatement)
+		if !ok {
+			t.Errorf("Parsed statement is not of type *ast.returnStatement. Parsed %T instead.", stmt)
+			continue
+		}
+		if returnStmt.TokenLiteral() != "return" {
+			t.Errorf("Parsed token literal is not `return`. Encountered %q instead.", returnStmt.TokenLiteral())
+		}
+	}
 }
